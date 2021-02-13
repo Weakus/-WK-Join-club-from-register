@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<plugin name="(WK) Join club from register" version_long="10000" version_human="1.0.0" author="Weak." website="https://steamcommunity.com/id/WeakLove/" update_check=""><hooks><hook type="C" class="\IPS\core\modules\front\system\register" filename="join"><![CDATA[//<?php
+
+/* To prevent PHP errors (extending class does not exist) revealing path */
+if ( !\defined( '\IPS\SUITE_UNIQUE_KEY' ) )
+{
+	exit;
+}
+
+class hook2015 extends _HOOK_CLASS_
+{
+	/**
+	 * Create Member
+	 *
+	 * @param	array 		$values   		    Values from form
+	 * @param	array		$profileFields		Profile field values from registration
+	 * @param	array|NULL	$postBeforeRegister	The row from core_post_before_registering if applicable
+	 * @return  \IPS\Member
+	 */
+	public static function _createMember( $values, $profileFields, $postBeforeRegister, &$form )
+	{
+		try
+		{
+			$member = parent::_createMember( $values, $profileFields, $postBeforeRegister, $form );
+			
+			if ( \IPS\Settings::i()->wkJoinClub_Id != 0 )
+			{
+				\IPS\Member\Club::load( \IPS\Settings::i()->wkJoinClub_Id )->addMember( \IPS\Member::load( $member->member_id ), \IPS\Member\Club::STATUS_MEMBER, TRUE, NULL, \IPS\Member::loggedIn(), TRUE );
+			}
+			
+			return $member;
+		}
+		catch ( \RuntimeException $e )
+		{
+			if ( method_exists( get_parent_class(), __FUNCTION__ ) )
+			{
+				return \call_user_func_array( 'parent::' . __FUNCTION__, \func_get_args() );
+			}
+			else
+			{
+				throw $e;
+			}
+		}
+	}
+}
+]]></hook></hooks><settings><setting><key>wkJoinClub_Id</key><default>0</default></setting></settings><settingsCode><![CDATA[//<?php
+
+$clubs = [];
+foreach ( \IPS\Member\Club::clubs( NULL, NULL, 'created' ) as $club )
+{
+	$clubs[$club->id] = $club->name;
+}
+$form->add( new \IPS\Helpers\Form\Select( 'wkJoinClub_Id', \IPS\Settings::i()->wkJoinClub_Id, FALSE, [ 'options' => $clubs, 'parse' => 'normal', 'multiple' => FALSE ], NULL, NULL, NULL, 'wkJoinClub_Id' ) );
+
+
+if ( $values = $form->values() )
+{
+	$form->saveAsSettings();
+	return TRUE;
+}
+
+return $form;]]></settingsCode><htmlFiles/><cssFiles/><jsFiles/><resourcesFiles/><lang><word key="wkJoinClub_Id" js="0">Wybierz klub</word><word key="wkJoinClub_Id_desc" js="0">Do którego klubu użytkownik ma zostać dodany.</word></lang><versions><version long="10000" human="1.0.0"><![CDATA[//<?php
+
+
+/* To prevent PHP errors (extending class does not exist) revealing path */
+if ( !\defined( '\IPS\SUITE_UNIQUE_KEY' ) )
+{
+	header( ( isset( $_SERVER['SERVER_PROTOCOL'] ) ? $_SERVER['SERVER_PROTOCOL'] : 'HTTP/1.0' ) . ' 403 Forbidden' );
+	exit;
+}
+
+/**
+ * Install Code
+ */
+class ips_plugins_setup_install
+{
+	/**
+	 * ...
+	 *
+	 * @return	array	If returns TRUE, upgrader will proceed to next step. If it returns any other value, it will set this as the value of the 'extra' GET parameter and rerun this step (useful for loops)
+	 */
+	public function step1()
+	{
+		
+
+		return TRUE;
+	}
+	
+	// You can create as many additional methods (step2, step3, etc.) as is necessary.
+	// Each step will be executed in a new HTTP request
+}]]></version></versions></plugin>
